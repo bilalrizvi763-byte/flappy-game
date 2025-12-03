@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Game JPG Popup</title>
+<style>
+  body{margin:0;background:#70c5ce;overflow:hidden}
+  canvas{display:block;margin:auto;background:#4ec0ca}
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let bird, pipes, score, gameOver, gameStarted, startStep;
+let crashParticles=[];
+let startButton={width:140,height:45,x:0,y:0};
+let continueButton={width:160,height:45,x:0,y:0};
+let yesButton={width:100,height:40,x:0,y:0};
+let cloud = {x:0, y:50, width:150, height:80, speed:1};
+
+const assets = {
+  bird: 'good.png',
+  bananaTop: 'banana.upper.png',
+  bananaBottom: 'banana.lower.png',
+  cloud: 'cloud.png',
+  start: 'mypic.jpg', // tumhari JPG
+  crash: 'sound.mp3'
+};
+
+let images = {};
+let sounds = {};
+
+function loadImage(src){
+  return new Promise(res=>{
+    const img = new Image();
+    img.onload = ()=>res(img);
+    img.onerror = ()=>{ console.warn('Image not found:', src); res(null); };
+    img.src = src;
+  });
+}
+function loadAudio(src){
+  return new Promise(res=>{
+    const a = new Audio(src); res(a);
+  });
+}
+async function loadAllAssets(){
+  images.bird = await loadImage(assets.bird);
+  images.bananaTop = await loadImage(assets.bananaTop);
+  images.bananaBottom = await loadImage(assets.bananaBottom);
+  images.cloud = await loadImage(assets.cloud);
+  images.start = await loadImage(assets.start);
+  sounds.crash = await loadAudio(assets.crash);
+}
+
+function initState(){
+  bird = {x:50,y:150,width:120,height:120,gravity:0.4,velocity:0};
+  pipes = [];
+  score = 0;
+  gameOver = false;
+  gameStarted = false;
+  startStep = 1;
+  crashParticles=[];
+}
+
+function createPipe(){
+  if(!gameStarted || gameOver) return;
+  const gap = 240;
+  const top = Math.random()*250 + 50;
+  pipes.push({x:400, top:top, bottom:top+gap, width:60, passed:false});
+}
+
+canvas.addEventListener('click', e=>{
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  if(!gameStarted){
+    if(startStep===1){
+      if(mx>=startButton.x && mx<=startButton.x+startButton.width &&
+         my>=startButton.y && my<=startButton.y+startButton.height){
+        startStep=2;
+      }
+    } else if(startStep===2){
+      if(mx>=continueButton.x && mx<=continueButton.x+continueButton.width &&
+         my>=continueButton.y && my<=continueButton.y+continueButton.height){
+        gameStarted=true;
+      }
+    }
+    return;
+  }
+
+  if(gameOver){
+    if(mx>=yesButton.x && mx<=yesButton.x+yesButton.width &&
+       my>=yesButton.y && my<=yesButton.y+yesButton.height){
+      resetGame();
+    }
+  }
+});
+
+document.addEventListener('keydown', e=>{
+  if(e.key===' ' && gameStarted && !gameOver){
+    bird.velocity=-6;
+  }
+});
+
+function resetGame(){
+  initState();
+  gameStarted=true;
+}
+
+function createCrashParticles(x,y){
+  for(let i=0;i<20;i++){
+    crashParticles.push({
+      x,y,
+      vx:(Math.random()-0.5)*4,
+      vy:(Math.random()-0.5)*4,
+      size:Math.random()*8+4,
+      alpha:1
+    });
+  }
+}
+
+function drawCrashParticles(){
+  crashParticles.forEach((p,index)=>{
+    ctx.fillStyle=`rgba(255,0,0,${p.alpha})`;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
+    p.x+=p.vx; p.y+=p.vy; p.alpha-=0.03;
+    if(p.alpha<=0) crashParticles.splice(index,1);
+  });
+}
+
+// ---------------- Start Popup with JPG at top ----------------
+function drawStartPopup(){
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.fillRect(0,0,400,600);
+
+  ctx.fillStyle='white';
+  ctx.fillRect(35,100,330,350);
+  ctx.strokeRect(35,100,330,350);
+
+  ctx.textAlign='center';
+  ctx.fillStyle='black';
+
+  if(startStep===1){
+    if(images.start){
+      const rectWidth=290, rectHeight=180;
+      const imgRatio=images.start.width/images.start.height;
+      let drawWidth=rectWidth, drawHeight=rectHeight;
+
+      if(rectWidth/rectHeight>imgRatio) drawWidth=rectHeight*imgRatio;
+      else drawHeight=rectWidth/imgRatio;
+
+      const dx=55 + (rectWidth-drawWidth)/2;
+      const dy=120 + (rectHeight-drawHeight)/2;
+
+      ctx.drawImage(images.start,dx,dy,drawWidth,drawHeight);
+    }
+
+    // Text below image
+    ctx.font='22px Arial';
+    ctx.fillText("To kaise hain aap log?",200,330);
+
+    startButton.x=200-70; startButton.y=360;
+    ctx.fillStyle='green'; ctx.fillRect(startButton.x,startButton.y,startButton.width,startButton.height);
+    ctx.fillStyle='white'; ctx.font='18px Arial';
+    ctx.fillText("START",200,startButton.y+30);
+  } else {
+    ctx.font='20px Arial';
+    ctx.fillText("To chaliye shuru karte hain",200,260);
+    ctx.fillText("bina kisi bakchodi ke 😎",200,290);
+
+    continueButton.x=200-80; continueButton.y=320;
+    ctx.fillStyle='blue'; ctx.fillRect(continueButton.x,continueButton.y,continueButton.width,continueButton.height);
+    ctx.fillStyle='white'; ctx.fillText("CONTINUE",200,continueButton.y+30);
+  }
+}
+
+function drawGameOverPopup(){
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.fillRect(0,0,400,600);
+
+  ctx.fillStyle='white'; ctx.fillRect(25,220,350,180);
+  ctx.strokeRect(25,220,350,180);
+
+  ctx.fillStyle='black'; ctx.textAlign='center';
+  ctx.font='20px Arial';
+  ctx.fillText("Bilal ko bhej tere bass ka kaam nahi",200,260);
+  ctx.font='16px Arial';
+  ctx.fillText("Maaz ki gand dobara maroge?",200,290);
+
+  yesButton.x=200-50; yesButton.y=310;
+  ctx.fillStyle='green'; ctx.fillRect(yesButton.x,yesButton.y,yesButton.width,yesButton.height);
+  ctx.fillStyle='white'; ctx.fillText("YES",200,yesButton.y+28);
+}
+
+// ---------------- Main Draw Loop ----------------
+function draw(){
+  ctx.clearRect(0,0,400,600);
+
+  if(images.cloud) ctx.drawImage(images.cloud,cloud.x,cloud.y,cloud.width,cloud.height);
+  cloud.x += (gameOver || !gameStarted)? 0 : cloud.speed;
+  if(cloud.x>400) cloud.x=-cloud.width;
+
+  if(!gameStarted){ requestAnimationFrame(draw); drawStartPopup(); return; }
+
+  if(!gameOver){
+    bird.velocity += bird.gravity;
+    if(bird.velocity>12) bird.velocity=12;
+    bird.y += bird.velocity;
+  }
+
+  if(images.bird) ctx.drawImage(images.bird,bird.x,bird.y,bird.width,bird.height);
+  else ctx.fillStyle='yellow', ctx.fillRect(bird.x,bird.y,bird.width,bird.height);
+
+  for(let i=pipes.length-1;i>=0;i--){
+    const pipe=pipes[i];
+    if(!gameOver) pipe.x -=2;
+
+    if(images.bananaTop && images.bananaBottom){
+      ctx.drawImage(images.bananaBottom,pipe.x,pipe.bottom,pipe.width,600-pipe.bottom);
+      ctx.drawImage(images.bananaTop,pipe.x,0,pipe.width,pipe.top);
+    } else ctx.fillStyle='green', ctx.fillRect(pipe.x,0,pipe.width,pipe.top),
+         ctx.fillRect(pipe.x,pipe.bottom,pipe.width,600-pipe.bottom);
+
+    const bx=bird.x+bird.width/2, by=bird.y+bird.height/2;
+    if(bx>pipe.x && bx<pipe.x+pipe.width && (by<pipe.top || by>pipe.bottom)){
+      if(!gameOver){
+        gameOver=true;
+        bird.velocity=0;
+        createCrashParticles(bx,by);
+        if(sounds.crash){ sounds.crash.currentTime=0; sounds.crash.play(); }
+      }
+    }
+
+    if(pipe.x+pipe.width<bird.x && !pipe.passed){ score++; pipe.passed=true; }
+    if(pipe.x+pipe.width<0) pipes.splice(i,1);
+  }
+
+  if(bird.y+bird.height>580){
+    if(!gameOver){
+      gameOver=true;
+      bird.y=580-bird.height;
+      bird.velocity=0;
+      createCrashParticles(bird.x+bird.width/2,bird.y+bird.height/2);
+      if(sounds.crash){ sounds.crash.currentTime=0; sounds.crash.play(); }
+    }
+  }
+
+  ctx.fillStyle='white';
+  ctx.font='25px Arial';
+  ctx.fillText("Score: "+score,10,30);
+
+  drawCrashParticles();
+
+  if(gameOver) drawGameOverPopup();
+
+  requestAnimationFrame(draw);
+}
+
+// ---------------- Start Game ----------------
+async function start(){
+  await loadAllAssets();
+  initState();
+  setInterval(createPipe,2000);
+  requestAnimationFrame(draw);
+}
+start();
+</script>
+
+</body>
+</html>
