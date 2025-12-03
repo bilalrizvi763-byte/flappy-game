@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Flappy Game Mobile & Desktop Optimized</title>
 <style>
-  html, body{margin:0;padding:0;background:#70c5ce;overflow:hidden}
+  html, body{margin:0;padding:0;background:#70c5ce;overflow:hidden;}
   canvas{display:block;margin:auto;background:#4ec0ca;touch-action:none;}
 </style>
 </head>
@@ -17,7 +17,7 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// -------- High DPI Scaling --------
+// High DPI scaling for mobile
 const scale = window.devicePixelRatio || 1;
 canvas.width *= scale;
 canvas.height *= scale;
@@ -76,7 +76,7 @@ function initState(){
   crashParticles=[];
 }
 
-// -------- Create Pipes --------
+// Create Pipes
 function createPipe(){
   if(!gameStarted || gameOver) return;
   const gap = 220;
@@ -84,14 +84,14 @@ function createPipe(){
   pipes.push({x:400, top:top, bottom:top+gap, width:60, passed:false});
 }
 
-// -------- Flap Bird Function --------
+// Bird flap
 function flapBird(){ 
   if(!gameOver && gameStarted){
-    bird.velocity=-7; // slightly stronger flap
+    bird.velocity=-7;
   }
 }
 
-// -------- Handle Touch/Click --------
+// Handle click/touch
 function handlePointer(mx,my){
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width / rect.width / (window.devicePixelRatio || 1);
@@ -131,13 +131,13 @@ canvas.addEventListener('touchstart', e=>{
   handlePointer(t.clientX,t.clientY);
 });
 
-// -------- Reset Game --------
+// Reset Game
 function resetGame(){
   initState();
   gameStarted=true;
 }
 
-// -------- Particles --------
+// Crash particles
 function createCrashParticles(x,y){
   for(let i=0;i<20;i++){
     crashParticles.push({
@@ -159,7 +159,7 @@ function drawCrashParticles(){
   });
 }
 
-// -------- Start Popup --------
+// Start popup
 function drawStartPopup(){
   ctx.fillStyle='rgba(0,0,0,0.3)';
   ctx.fillRect(0,0,400,600);
@@ -202,7 +202,7 @@ function drawStartPopup(){
   }
 }
 
-// -------- Game Over Popup --------
+// Game over popup
 function drawGameOverPopup(){
   ctx.fillStyle='rgba(0,0,0,0.3)';
   ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -221,13 +221,13 @@ function drawGameOverPopup(){
   ctx.fillStyle='white'; ctx.fillText("YES",200,yesButton.y+28);
 }
 
-// -------- Main Draw Loop --------
+// Main draw loop
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   if(images.cloud) ctx.drawImage(images.cloud,cloud.x,cloud.y,cloud.width,cloud.height);
   cloud.x += (gameOver || !gameStarted)? 0 : cloud.speed;
-  if(cloud.x>canvas.width) cloud.x=-cloud.width;
+  if(cloud.x>400) cloud.x=-cloud.width;
 
   if(!gameStarted){ requestAnimationFrame(draw); drawStartPopup(); return; }
 
@@ -242,7 +242,7 @@ function draw(){
 
   for(let i=pipes.length-1;i>=0;i--){
     const pipe=pipes[i];
-    if(!gameOver) pipe.x -=3; // increased pipe speed
+    if(!gameOver) pipe.x -=3;
 
     if(images.bananaTop && images.bananaBottom){
       ctx.drawImage(images.bananaBottom,pipe.x,pipe.bottom,pipe.width,600-pipe.bottom);
@@ -274,11 +274,11 @@ function draw(){
     }
   }
 
-  // -------- Score Display --------
+  // Score
   ctx.fillStyle='white';
   ctx.font='28px Arial';
   ctx.textAlign='left';
-  ctx.fillText("Score: "+score,15,40); // moved slightly inside
+  ctx.fillText("Score: "+score,15,40);
 
   drawCrashParticles();
 
@@ -287,11 +287,11 @@ function draw(){
   requestAnimationFrame(draw);
 }
 
-// -------- Start Game --------
+// Start game
 async function start(){
   await loadAllAssets();
   initState();
-  setInterval(createPipe,1800); // slightly faster pipe interval
+  setInterval(createPipe,1800);
   requestAnimationFrame(draw);
 }
 start();
