@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flappy Game JPG Popup</title>
+<title>Flappy Game JPG Popup Mobile & Desktop</title>
 <style>
-  body{margin:0;background:#70c5ce;overflow:hidden;}
-  canvas{display:block;margin:auto;background:#4ec0ca;}
+  body{margin:0;background:#70c5ce;overflow:hidden}
+  canvas{display:block;margin:auto;background:#4ec0ca;touch-action:none;}
 </style>
 </head>
 <body>
@@ -44,11 +44,13 @@ function loadImage(src){
     img.src = src;
   });
 }
+
 function loadAudio(src){
   return new Promise(res=>{
     const a = new Audio(src); res(a);
   });
 }
+
 async function loadAllAssets(){
   images.bird = await loadImage(assets.bird);
   images.bananaTop = await loadImage(assets.bananaTop);
@@ -75,36 +77,30 @@ function createPipe(){
   pipes.push({x:400, top:top, bottom:top+gap, width:60, passed:false});
 }
 
-// ------------ Mobile + Laptop Input Handling ----------------
-function flapBird(){
-  if(gameStarted && !gameOver){
-    bird.velocity = -6;
+// -------- Flap Bird Function --------
+function flapBird(){ 
+  if(!gameOver && gameStarted){
+    bird.velocity=-6;
   }
 }
 
-canvas.addEventListener('click', e=>{
-  handlePointer(e.clientX, e.clientY);
-});
-canvas.addEventListener('touchstart', e=>{
-  e.preventDefault();
-  const touch = e.touches[0];
-  handlePointer(touch.clientX, touch.clientY);
-});
-
-function handlePointer(mx, my){
+// -------- Handle Touch/Click --------
+function handlePointer(mx,my){
   const rect = canvas.getBoundingClientRect();
-  mx -= rect.left;
-  my -= rect.top;
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (mx - rect.left) * scaleX;
+  const y = (my - rect.top) * scaleY;
 
   if(!gameStarted){
     if(startStep===1){
-      if(mx>=startButton.x && mx<=startButton.x+startButton.width &&
-         my>=startButton.y && my<=startButton.y+startButton.height){
+      if(x>=startButton.x && x<=startButton.x+startButton.width &&
+         y>=startButton.y && y<=startButton.y+startButton.height){
         startStep=2;
       }
     } else if(startStep===2){
-      if(mx>=continueButton.x && mx<=continueButton.x+continueButton.width &&
-         my>=continueButton.y && my<=continueButton.y+continueButton.height){
+      if(x>=continueButton.x && x<=continueButton.x+continueButton.width &&
+         y>=continueButton.y && y<=continueButton.y+continueButton.height){
         gameStarted=true;
       }
     }
@@ -112,26 +108,29 @@ function handlePointer(mx, my){
   }
 
   if(gameOver){
-    if(mx>=yesButton.x && mx<=yesButton.x+yesButton.width &&
-       my>=yesButton.y && my<=yesButton.y+yesButton.height){
+    if(x>=yesButton.x && x<=yesButton.x+yesButton.width &&
+       y>=yesButton.y && y<=yesButton.y+yesButton.height){
       resetGame();
     }
   } else {
-    flapBird(); // Tap anywhere else flap
+    flapBird(); // Anywhere tap to flap
   }
 }
 
-document.addEventListener('keydown', e=>{
-  if(e.key===' '){
-    flapBird();
-  }
+canvas.addEventListener('click', e=> handlePointer(e.clientX,e.clientY));
+canvas.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  const t = e.touches[0];
+  handlePointer(t.clientX,t.clientY);
 });
 
+// -------- Reset Game --------
 function resetGame(){
   initState();
   gameStarted=true;
 }
 
+// -------- Particles --------
 function createCrashParticles(x,y){
   for(let i=0;i<20;i++){
     crashParticles.push({
@@ -153,10 +152,10 @@ function drawCrashParticles(){
   });
 }
 
-// ---------------- Start Popup with JPG ----------------
+// -------- Start Popup --------
 function drawStartPopup(){
   ctx.fillStyle='rgba(0,0,0,0.3)';
-  ctx.fillRect(0,0,400,600);
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 
   ctx.fillStyle='white';
   ctx.fillRect(35,100,330,350);
@@ -172,6 +171,7 @@ function drawStartPopup(){
       let drawWidth=rectWidth, drawHeight=rectHeight;
       if(rectWidth/rectHeight>imgRatio) drawWidth=rectHeight*imgRatio;
       else drawHeight=rectWidth/imgRatio;
+
       const dx=55 + (rectWidth-drawWidth)/2;
       const dy=120 + (rectHeight-drawHeight)/2;
       ctx.drawImage(images.start,dx,dy,drawWidth,drawHeight);
@@ -184,7 +184,6 @@ function drawStartPopup(){
     ctx.fillStyle='green'; ctx.fillRect(startButton.x,startButton.y,startButton.width,startButton.height);
     ctx.fillStyle='white'; ctx.font='18px Arial';
     ctx.fillText("START",200,startButton.y+30);
-
   } else {
     ctx.font='20px Arial';
     ctx.fillText("To chaliye shuru karte hain",200,260);
@@ -196,10 +195,10 @@ function drawStartPopup(){
   }
 }
 
-// ---------------- Game Over Popup ----------------
+// -------- Game Over Popup --------
 function drawGameOverPopup(){
   ctx.fillStyle='rgba(0,0,0,0.3)';
-  ctx.fillRect(0,0,400,600);
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 
   ctx.fillStyle='white'; ctx.fillRect(25,220,350,180);
   ctx.strokeRect(25,220,350,180);
@@ -215,15 +214,15 @@ function drawGameOverPopup(){
   ctx.fillStyle='white'; ctx.fillText("YES",200,yesButton.y+28);
 }
 
-// ---------------- Main Draw Loop ----------------
+// -------- Main Draw Loop --------
 function draw(){
-  ctx.clearRect(0,0,400,600);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
   if(images.cloud) ctx.drawImage(images.cloud,cloud.x,cloud.y,cloud.width,cloud.height);
   cloud.x += (gameOver || !gameStarted)? 0 : cloud.speed;
-  if(cloud.x>400) cloud.x=-cloud.width;
+  if(cloud.x>canvas.width) cloud.x=-cloud.width;
 
-  if(!gameStarted){ drawStartPopup(); requestAnimationFrame(draw); return; }
+  if(!gameStarted){ requestAnimationFrame(draw); drawStartPopup(); return; }
 
   if(!gameOver){
     bird.velocity += bird.gravity;
@@ -279,7 +278,7 @@ function draw(){
   requestAnimationFrame(draw);
 }
 
-// ---------------- Start Game ----------------
+// -------- Start Game --------
 async function start(){
   await loadAllAssets();
   initState();
@@ -288,5 +287,6 @@ async function start(){
 }
 start();
 </script>
+
 </body>
 </html>
