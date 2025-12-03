@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flappy Game JPG Popup</title>
 <style>
-  body{margin:0;background:#70c5ce;overflow:hidden}
-  canvas{display:block;margin:auto;background:#4ec0ca}
+  body{margin:0;background:#70c5ce;overflow:hidden;}
+  canvas{display:block;margin:auto;background:#4ec0ca;}
 </style>
 </head>
 <body>
@@ -29,7 +29,7 @@ const assets = {
   bananaTop: 'banana.upper.png',
   bananaBottom: 'banana.lower.png',
   cloud: 'cloud.png',
-  start: 'mypic.jpg', // tumhari JPG
+  start: 'mypic.jpg', 
   crash: 'sound.mp3'
 };
 
@@ -45,9 +45,10 @@ function loadImage(src){
   });
 }
 function loadAudio(src){
-  return new Promise(res=>{ const a = new Audio(src); res(a); });
+  return new Promise(res=>{
+    const a = new Audio(src); res(a);
+  });
 }
-
 async function loadAllAssets(){
   images.bird = await loadImage(assets.bird);
   images.bananaTop = await loadImage(assets.bananaTop);
@@ -74,19 +75,26 @@ function createPipe(){
   pipes.push({x:400, top:top, bottom:top+gap, width:60, passed:false});
 }
 
-// ---------------- Bird flap for desktop & mobile ----------------
-function flapBird() {
-    if(gameStarted && !gameOver) bird.velocity = -6;
+// ------------ Mobile + Laptop Input Handling ----------------
+function flapBird(){
+  if(gameStarted && !gameOver){
+    bird.velocity = -6;
+  }
 }
 
-// Desktop
-document.addEventListener('keydown', e => { if(e.key===' ') flapBird(); });
+canvas.addEventListener('click', e=>{
+  handlePointer(e.clientX, e.clientY);
+});
+canvas.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  const touch = e.touches[0];
+  handlePointer(touch.clientX, touch.clientY);
+});
 
-// Desktop click
-canvas.addEventListener('click', e => {
+function handlePointer(mx, my){
   const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
+  mx -= rect.left;
+  my -= rect.top;
 
   if(!gameStarted){
     if(startStep===1){
@@ -109,38 +117,12 @@ canvas.addEventListener('click', e => {
       resetGame();
     }
   } else {
-    flapBird();
+    flapBird(); // Tap anywhere else flap
   }
-});
+}
 
-// Mobile touch
-canvas.addEventListener('touchstart', e=>{
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.touches[0].clientX - rect.left;
-  const my = e.touches[0].clientY - rect.top;
-
-  if(!gameStarted){
-    if(startStep===1){
-      if(mx>=startButton.x && mx<=startButton.x+startButton.width &&
-         my>=startButton.y && my<=startButton.y+startButton.height){
-        startStep=2;
-      } else if(startStep===2){
-        if(mx>=continueButton.x && mx<=continueButton.x+continueButton.width &&
-           my>=continueButton.y && my<=continueButton.y+continueButton.height){
-          gameStarted=true;
-        }
-      }
-      return;
-    }
-  }
-
-  if(gameOver){
-    if(mx>=yesButton.x && mx<=yesButton.x+yesButton.width &&
-       my>=yesButton.y && my<=yesButton.y+yesButton.height){
-      resetGame();
-    }
-  } else {
+document.addEventListener('keydown', e=>{
+  if(e.key===' '){
     flapBird();
   }
 });
@@ -152,7 +134,13 @@ function resetGame(){
 
 function createCrashParticles(x,y){
   for(let i=0;i<20;i++){
-    crashParticles.push({x,y,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4,size:Math.random()*8+4,alpha:1});
+    crashParticles.push({
+      x,y,
+      vx:(Math.random()-0.5)*4,
+      vy:(Math.random()-0.5)*4,
+      size:Math.random()*8+4,
+      alpha:1
+    });
   }
 }
 
@@ -182,13 +170,10 @@ function drawStartPopup(){
       const rectWidth=290, rectHeight=180;
       const imgRatio=images.start.width/images.start.height;
       let drawWidth=rectWidth, drawHeight=rectHeight;
-
       if(rectWidth/rectHeight>imgRatio) drawWidth=rectHeight*imgRatio;
       else drawHeight=rectWidth/imgRatio;
-
       const dx=55 + (rectWidth-drawWidth)/2;
       const dy=120 + (rectHeight-drawHeight)/2;
-
       ctx.drawImage(images.start,dx,dy,drawWidth,drawHeight);
     }
 
@@ -199,6 +184,7 @@ function drawStartPopup(){
     ctx.fillStyle='green'; ctx.fillRect(startButton.x,startButton.y,startButton.width,startButton.height);
     ctx.fillStyle='white'; ctx.font='18px Arial';
     ctx.fillText("START",200,startButton.y+30);
+
   } else {
     ctx.font='20px Arial';
     ctx.fillText("To chaliye shuru karte hain",200,260);
@@ -237,7 +223,7 @@ function draw(){
   cloud.x += (gameOver || !gameStarted)? 0 : cloud.speed;
   if(cloud.x>400) cloud.x=-cloud.width;
 
-  if(!gameStarted){ requestAnimationFrame(draw); drawStartPopup(); return; }
+  if(!gameStarted){ drawStartPopup(); requestAnimationFrame(draw); return; }
 
   if(!gameOver){
     bird.velocity += bird.gravity;
@@ -302,6 +288,5 @@ async function start(){
 }
 start();
 </script>
-
 </body>
 </html>
