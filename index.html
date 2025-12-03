@@ -45,10 +45,9 @@ function loadImage(src){
   });
 }
 function loadAudio(src){
-  return new Promise(res=>{
-    const a = new Audio(src); res(a);
-  });
+  return new Promise(res=>{ const a = new Audio(src); res(a); });
 }
+
 async function loadAllAssets(){
   images.bird = await loadImage(assets.bird);
   images.bananaTop = await loadImage(assets.bananaTop);
@@ -75,7 +74,16 @@ function createPipe(){
   pipes.push({x:400, top:top, bottom:top+gap, width:60, passed:false});
 }
 
-canvas.addEventListener('click', e=>{
+// ---------------- Bird flap for desktop & mobile ----------------
+function flapBird() {
+    if(gameStarted && !gameOver) bird.velocity = -6;
+}
+
+// Desktop
+document.addEventListener('keydown', e => { if(e.key===' ') flapBird(); });
+
+// Desktop click
+canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
   const mx = e.clientX - rect.left;
   const my = e.clientY - rect.top;
@@ -100,12 +108,40 @@ canvas.addEventListener('click', e=>{
        my>=yesButton.y && my<=yesButton.y+yesButton.height){
       resetGame();
     }
+  } else {
+    flapBird();
   }
 });
 
-document.addEventListener('keydown', e=>{
-  if(e.key===' ' && gameStarted && !gameOver){
-    bird.velocity=-6;
+// Mobile touch
+canvas.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.touches[0].clientX - rect.left;
+  const my = e.touches[0].clientY - rect.top;
+
+  if(!gameStarted){
+    if(startStep===1){
+      if(mx>=startButton.x && mx<=startButton.x+startButton.width &&
+         my>=startButton.y && my<=startButton.y+startButton.height){
+        startStep=2;
+      } else if(startStep===2){
+        if(mx>=continueButton.x && mx<=continueButton.x+continueButton.width &&
+           my>=continueButton.y && my<=continueButton.y+continueButton.height){
+          gameStarted=true;
+        }
+      }
+      return;
+    }
+  }
+
+  if(gameOver){
+    if(mx>=yesButton.x && mx<=yesButton.x+yesButton.width &&
+       my>=yesButton.y && my<=yesButton.y+yesButton.height){
+      resetGame();
+    }
+  } else {
+    flapBird();
   }
 });
 
@@ -116,13 +152,7 @@ function resetGame(){
 
 function createCrashParticles(x,y){
   for(let i=0;i<20;i++){
-    crashParticles.push({
-      x,y,
-      vx:(Math.random()-0.5)*4,
-      vy:(Math.random()-0.5)*4,
-      size:Math.random()*8+4,
-      alpha:1
-    });
+    crashParticles.push({x,y,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4,size:Math.random()*8+4,alpha:1});
   }
 }
 
@@ -135,7 +165,7 @@ function drawCrashParticles(){
   });
 }
 
-// ---------------- Start Popup with JPG at top ----------------
+// ---------------- Start Popup with JPG ----------------
 function drawStartPopup(){
   ctx.fillStyle='rgba(0,0,0,0.3)';
   ctx.fillRect(0,0,400,600);
@@ -162,7 +192,6 @@ function drawStartPopup(){
       ctx.drawImage(images.start,dx,dy,drawWidth,drawHeight);
     }
 
-    // Text below image
     ctx.font='22px Arial';
     ctx.fillText("To kaise hain aap log?",200,330);
 
@@ -181,6 +210,7 @@ function drawStartPopup(){
   }
 }
 
+// ---------------- Game Over Popup ----------------
 function drawGameOverPopup(){
   ctx.fillStyle='rgba(0,0,0,0.3)';
   ctx.fillRect(0,0,400,600);
