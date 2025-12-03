@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flappy Game JPG Popup Mobile & Desktop</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Flappy Game Mobile & Desktop Optimized</title>
 <style>
-  body{margin:0;background:#70c5ce;overflow:hidden}
+  html, body{margin:0;padding:0;background:#70c5ce;overflow:hidden}
   canvas{display:block;margin:auto;background:#4ec0ca;touch-action:none;}
 </style>
 </head>
@@ -17,12 +17,18 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// -------- High DPI Scaling --------
+const scale = window.devicePixelRatio || 1;
+canvas.width *= scale;
+canvas.height *= scale;
+ctx.scale(scale, scale);
+
 let bird, pipes, score, gameOver, gameStarted, startStep;
 let crashParticles=[];
 let startButton={width:140,height:45,x:0,y:0};
 let continueButton={width:160,height:45,x:0,y:0};
 let yesButton={width:100,height:40,x:0,y:0};
-let cloud = {x:0, y:50, width:150, height:80, speed:1};
+let cloud = {x:0, y:50, width:150, height:80, speed:1.5};
 
 const assets = {
   bird: 'good.png',
@@ -61,7 +67,7 @@ async function loadAllAssets(){
 }
 
 function initState(){
-  bird = {x:50,y:150,width:120,height:120,gravity:0.4,velocity:0};
+  bird = {x:50,y:150,width:120,height:120,gravity:0.5,velocity:0};
   pipes = [];
   score = 0;
   gameOver = false;
@@ -70,9 +76,10 @@ function initState(){
   crashParticles=[];
 }
 
+// -------- Create Pipes --------
 function createPipe(){
   if(!gameStarted || gameOver) return;
-  const gap = 240;
+  const gap = 220;
   const top = Math.random()*250 + 50;
   pipes.push({x:400, top:top, bottom:top+gap, width:60, passed:false});
 }
@@ -80,15 +87,15 @@ function createPipe(){
 // -------- Flap Bird Function --------
 function flapBird(){ 
   if(!gameOver && gameStarted){
-    bird.velocity=-6;
+    bird.velocity=-7; // slightly stronger flap
   }
 }
 
 // -------- Handle Touch/Click --------
 function handlePointer(mx,my){
   const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
+  const scaleX = canvas.width / rect.width / (window.devicePixelRatio || 1);
+  const scaleY = canvas.height / rect.height / (window.devicePixelRatio || 1);
   const x = (mx - rect.left) * scaleX;
   const y = (my - rect.top) * scaleY;
 
@@ -113,7 +120,7 @@ function handlePointer(mx,my){
       resetGame();
     }
   } else {
-    flapBird(); // Anywhere tap to flap
+    flapBird();
   }
 }
 
@@ -155,7 +162,7 @@ function drawCrashParticles(){
 // -------- Start Popup --------
 function drawStartPopup(){
   ctx.fillStyle='rgba(0,0,0,0.3)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillRect(0,0,400,600);
 
   ctx.fillStyle='white';
   ctx.fillRect(35,100,330,350);
@@ -235,7 +242,7 @@ function draw(){
 
   for(let i=pipes.length-1;i>=0;i--){
     const pipe=pipes[i];
-    if(!gameOver) pipe.x -=2;
+    if(!gameOver) pipe.x -=3; // increased pipe speed
 
     if(images.bananaTop && images.bananaBottom){
       ctx.drawImage(images.bananaBottom,pipe.x,pipe.bottom,pipe.width,600-pipe.bottom);
@@ -267,9 +274,11 @@ function draw(){
     }
   }
 
+  // -------- Score Display --------
   ctx.fillStyle='white';
-  ctx.font='25px Arial';
-  ctx.fillText("Score: "+score,10,30);
+  ctx.font='28px Arial';
+  ctx.textAlign='left';
+  ctx.fillText("Score: "+score,15,40); // moved slightly inside
 
   drawCrashParticles();
 
@@ -282,7 +291,7 @@ function draw(){
 async function start(){
   await loadAllAssets();
   initState();
-  setInterval(createPipe,2000);
+  setInterval(createPipe,1800); // slightly faster pipe interval
   requestAnimationFrame(draw);
 }
 start();
